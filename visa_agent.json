@@ -1,0 +1,243 @@
+{
+  "name": "visa agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        180
+      ],
+      "id": "20613718-0880-4b38-ae8c-860816070088",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "location": "allReddit",
+        "keyword": "={{ $json.keyword }}",
+        "limit": 20,
+        "additionalFields": {
+          "sort": "relevance"
+        }
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        360
+      ],
+      "id": "6c3f1187-37e2-40c5-854e-ee1564cd3849",
+      "name": "Reddit"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { keyword: \"us visa mumbai\" } },\n  { json: { keyword: \"b1 b2 appointment mumbai\" } },\n  { json: { keyword: \"us consulate mumbai\" } },\n  { json: { keyword: \"mumbai visa slots open\" } },\n\n  { json: { keyword: \"us visa delhi\" } },\n  { json: { keyword: \"b1 b2 appointment delhi\" } },\n  { json: { keyword: \"us embassy delhi\" } },\n  { json: { keyword: \"delhi visa slots open\" } },\n\n  { json: { keyword: \"us visa chennai\" } },\n  { json: { keyword: \"b1 b2 appointment chennai\" } },\n  { json: { keyword: \"us consulate chennai\" } },\n  { json: { keyword: \"chennai visa slots open\" } },\n\n  { json: { keyword: \"us visa hyderabad\" } },\n  { json: { keyword: \"b1 b2 appointment hyderabad\" } },\n  { json: { keyword: \"us consulate hyderabad\" } },\n  { json: { keyword: \"hyderabad visa slots open\" } },\n\n  { json: { keyword: \"us visa kolkata\" } },\n  { json: { keyword: \"b1 b2 appointment kolkata\" } },\n  { json: { keyword: \"us consulate kolkata\" } },\n  { json: { keyword: \"kolkata visa slots open\" } }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        40
+      ],
+      "id": "1398d307-0a81-4636-8ec3-05129d9359fb",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent visa appointment filter.\n\nYour job is to read Reddit posts and determine if they are ANNOUNCING the availability of US B1/B2 visa appointments for India (especially cities like Mumbai, Delhi, Chennai, etc.).\n\nIgnore all posts about:\n- Visa interviews\n- Rejections\n- Germany or any non-US country\n- Agents, document fraud, or personal stories\n- Experiences, tips, or general visa news\n\nOnly reply 'true' if the post clearly says visa appointments are OPEN or available in India.\n\nOtherwise, reply 'false'.\n\nReddit post:\n{{ $json.selftext || $json.title }}\n\n\ntitle:{{ $json.title }}\ntext: {{ $json.selftext }}\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        80
+      ],
+      "id": "3627c39e-fcdc-4210-8e4d-254a0a43078a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {
+          "maxTokens": null
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        860,
+        280
+      ],
+      "id": "bb1bb372-5756-43c2-9f93-a8fec972674f",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "84748b02-6dbc-4c5b-b222-dd2a0a03c293",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        340
+      ],
+      "id": "1e140ccc-c4a1-4463-af00-b8052a2eb7c4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "=6174322415",
+        "text": "=visa appointment available in india\n\n📄 Post: {{ $('Reddit').item.json.title }}\n🔗 Link: {{ $('Reddit').item.json.permalink }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        440
+      ],
+      "id": "3109e3ba-abba-41a1-8b59-9d14ad3dea4f",
+      "name": "Telegram",
+      "webhookId": "2dc0d2da-790a-48dc-b282-26d31ec63d33"
+      
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        500
+      ],
+      "id": "e4d03cdb-19ce-4fa9-baf2-a3a3144e806b",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a800a579-d716-4b1b-9699-3d271dd87fc1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cc32871da5037acab76331ad3b125aca68cc03a29a07a623e70ac38a5804e5d"
+  },
+  "id": "LAPSNasIeMvHeBfg",
+  "tags": []
+}
